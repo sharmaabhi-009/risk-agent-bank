@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
+from risk_agent_bank import send_llm_request
 import re
 import mysql.connector
 import os
@@ -96,23 +97,22 @@ async def fun_assess_fraud_risk(
     log.info(f"data fetched for customer_id=={data}")
     
     
-    prompt = (
-        "You are a banking fraud detection assistant. Fetch customer history from tables in json format and return the risk for customer"
-        "with keys: risk_score (0-100), "
-        "anomaly_reasons (list of strings), recommendation (ALLOW/REVIEW/BLOCK)."
+    system_prompt = (
+    "You are a banking fraud detection assistant. Fetch customer history from tables in JSON format and return the risk for the customer "
+    "with keys: risk_score (0-100), "
+    "anomaly_reasons (list of strings), recommendation (ALLOW/REVIEW/BLOCK)."
+    )
 
-        f"Customer History: {data}\n"
-        f"Transaction Details: {user_msg}\n"
-        "Risk Assement:"
+    user_prompt = (
+    f"Customer History: {data}\n"
+    f"Transaction Details: {user_msg}\n"
+    "Risk Assessment:"
     )
     
+    final_prompt = f"{system_prompt}\n\n{user_prompt}"
     
-    log.info(f"{log_identifier} User_Input::: {data}")
-    if tool_context and hasattr(tool_context, "llm") and tool_context.llm:
-        llm_response = await tool_context.llm.complete(prompt)
-        
-    else:
-        llm_response = f"(Simulated LLM response to: '{prompt}')"
+    llm_response=await send_llm_request(tool_context,final_prompt)
+ 
 
     return {
         "status": "success",
